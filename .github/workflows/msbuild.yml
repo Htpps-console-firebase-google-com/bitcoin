@@ -1,0 +1,239 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: MSBuild
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Build
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      # Add additional options to the MSBuild command line here (like platform or verbosity level).
+      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+Fail konfigurasi yang anda kongsikan adalah skrip GitHub Actions workflow rasmi untuk MSBuild (.github/workflows/msbuild.yml) yang direka khas untuk membina (build) aplikasi berasaskan Windows dan .NET Framework (seperti C# / C++ Solution). [1, 2] 
+Fail ini berbeza dengan webpack.yml JavaScript yang kita bincangkan sebelum ini kerana ia menggunakan persekitaran operasi Windows (windows-latest) serta menggunakan pengurus pakej NuGet dan enjin MSBuild daripada Microsoft.
+Berikut adalah huraian bagi setiap komponen teras fail serta panduan optimum untuk mengelakkan kegagalan integrasi:
+------------------------------
+## 1. Struktur Anatomi Konfigurasi msbuild.yml
+
+* Pemicu (Triggers): Dijadualkan untuk berjalan secara automatik setiap kali ada kod ditolak (push) atau percubaan cantuman (pull request) pada cawangan master.
+* Persekitaran Pembolehubah (Environment Variables):
+* SOLUTION_FILE_PATH: . ➔ Menandakan fail .sln atau projek berada di direktori akar repositori.
+   * BUILD_CONFIGURATION: Release ➔ Mengarahkan kod dikompilasi ke mod pengeluaran (production/release) untuk saiz fail yang optimum dan pantas.
+* Hak Akses (Permissions): Ditetapkan secara ketat pada contents: read demi mengekalkan keselamatan kod peringkat asas.
+
+------------------------------
+## 2. Perincian Aliran Kerja Langkah demi Langkah (Steps)
+
+   1. actions/checkout@v4: Memuat turun kod sumber repositori ke pemacu maya Windows.
+   2. microsoft/setup-msbuild@v1.0.2: Memasang dan mendaftarkan alat utiliti MSBuild ke dalam pembolehubah persekitaran PATH pelayan.
+   3. nuget restore ...: Menarik dan memulihkan semula (restore) semua pakej dependensi komponen luaran (.NET Packages) yang diperlukan oleh aplikasi anda.
+   4. msbuild /m ...: Melaksanakan proses kompilasi penuh. Bendera /m (multiprocessor) digunakan untuk memaksimumkan kelajuan build dengan menggunakan semua teras CPU yang tersedia pada hos.
+
+------------------------------
+## 3. Matriks Perbandingan Konfigurasi Sistem Automasi
+Bagi memastikan kejelasan perbezaan ekosistem binaan yang anda miliki, berikut adalah perbandingan antara fail automasi MSBuild yang baharu ini dengan templat Webpack anda sebelumnya:
+
+| Entiti Parameter | Talian Paip .NET (MSBuild) | Talian Paip JavaScript (Webpack) |
+|---|---|---|
+| Sistem Operasi (runs-on) | windows-latest | ubuntu-latest |
+| Pengurus Dependensi | nuget restore | npm ci / npm install |
+| Enjin Kompilasi | msbuild | npx webpack --mode production |
+| Sasaran Cawangan Utama | Cawangan master | Cawangan main |
+| Fungsi Output Projek | Menghasilkan fail eksekusi .dll / .exe | Menghasilkan fail web statik di folder dist/ |
+
+------------------------------
+## 4. Amalan Terbaik untuk Mengelakkan Ralat Build (.NET)
+Memandangkan beberapa larian binaan pada projek automasi boleh terdedah kepada ralat kebenaran atau kegagalan konfigurasi, pastikan semakan ini dilakukan sebelum anda melakukan git push: [3, 4] 
+
+* Padanan Cawangan: Fail ini dikunci pada cawangan "master". Jika repositori utama anda menggunakan nama "main", pastikan anda menukar nama cawangan pada baris branches: [ "master" ] kepada branches: [ "main" ] untuk mengelakkan workflow daripada tidak tercetus.
+* Lokasi Fail Solution: Jika fail .sln anda tidak terletak di folder utama (akar) tetapi berada di dalam folder khusus (cth: folder src/), tukar nilai SOLUTION_FILE_PATH: . kepada SOLUTION_FILE_PATH: ./src/NamaProjek.sln.
+* Kebenaran Perkhidmatan: Pastikan tiada sekatan polisi akaun atau kegagalan kemas kini lesen akses pihak ketiga semasa NuGet melakukan pemulihan pakej di pelayan awan. [1] 
+
+Adakah fail konfigurasi MSBuild ini bertujuan untuk membina aplikasi desktop tradisional (.NET Framework) atau projek .NET Core/Modern .NET? Jika anda mahu, saya boleh membantu anda menukar skrip ini kepada standard .NET CLI (dotnet build) yang lebih pantas dan boleh berjalan pada sistem operasi Linux (ubuntu-latest) untuk menjimatkan kos masa pengebilan Actions anda.
+
+[1] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DNEhaccNlbBpNrzwRriFtHfm53TBLxUw9U)
+[2] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DNy3P_Wcsxv0CkAsb-nzgw8QI-XSQ6akx8)
+[3] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DMTDL6eef6qqCVXMtws1i63re_t8Vm9qd4)
+[4] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DMCTgICScxxaOPEDOlxn1ggqBJj8NYWOGc)
+Fail konfigurasi msbuild.yml yang anda kongsikan sebelum ini merupakan templat standard GitHub Actions CI/CD pipeline untuk projek perisian berasaskan Microsoft .NET Framework (seperti C# atau C++ Solution). Berdasarkan rekod operasi dan amalan terbaik, fail ini diletakkan di dalam direktori repositori anda di .github/workflows/msbuild.yml. [1] 
+Berikut adalah rumusan perincian kod, struktur data, dan panduan optimum bagi fail msbuild.yml:
+------------------------------
+## 1. Struktur Fail Sintaks YAML Lengkap (msbuild.yml)
+
+# Aliran kerja ini menggunakan aksi pihak ketiga yang disediakan oleh Microsoft.name: MSBuild
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+env:
+  # Laluan relatif ke fail solution (.sln) dari punca repositori.
+  SOLUTION_FILE_PATH: .
+
+  # Jenis konfigurasi binaan (Debug/Release).
+  BUILD_CONFIGURATION: Release
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest # Memerlukan hos persekitaran Windows maya
+
+    steps:
+    # 1. Mengambil kod sumber dari repositori
+    - uses: actions/checkout@v4
+
+    # 2. Mendaftar alat MSBuild ke dalam persekitaran PATH pelayan Windows
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    # 3. Memulihkan pakej dependensi luaran melalui pengurus NuGet
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    # 4. Melaksanakan proses kompilasi penuh menggunakan pilihan multiprocessor (/m)
+    - name: Build Solution
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+
+------------------------------
+## 2. Komponen Analisis Aliran Kerja CI/CD
+Setiap bahagian di dalam skrip msbuild.yml direkayasa untuk mengendalikan tugas-tugas pengeluaran berikut secara sistematik:
+
+* runs-on: windows-latest: Memandangkan enjin MSBuild dan .NET Framework memerlukan platform Windows native, pelayan CI/CD akan menggunakan persekitaran maya berasaskan Windows Server untuk menjalankan kompilasi.
+* nuget restore: Langkah kritikal yang membaca semua fail konfigurasi pakej (packages.config atau rujukan .csproj) dan memuat turun komponen luaran yang diperlukan sebelum pembinaan bermula.
+* msbuild /m: Mempercepatkan garis masa binaan dengan membahagikan tugas kompilasi merentasi semua teras pemprosesan CPU yang tersedia secara selari (multiprocessing).
+
+------------------------------
+## 3. Langkah Pencegahan Ralat & Amalan Terbaik Keselamatan
+Berdasarkan garis panduan semakan sistem dan pengurusan aliran kerja di [GitHub](https://github.com/), anda perlu memastikan beberapa tetapan ditala dengan betul bagi mengelakkan kegagalan integrasi: [1, 2] 
+
+   1. Pengisytiharan Kunci Tunggal: Pastikan fail .yml anda bersih daripada pertindihan kunci (duplicate keys) atau konfigurasi blok berlapis yang tidak sah untuk mengelakkan ralat tafsiran sintaks oleh GitHub Actions. [1, 2] 
+   2. Pemetaan Nama Cawangan: Aliran kerja ini dikunci pada cawangan "master". Jika repositori utama anda menggunakan nama "main", anda wajib menukar baris kawalan pencetus kepada branches: [ "main" ] agar pipeline automatik dapat dicetuskan dengan betul.
+   3. Laluan Fail .sln: Jika fail penyelesaian perisian anda tidak berada di folder akar (root) sebaliknya diletakkan di dalam subfolder (contohnya src/), tukar nilai parameter persekitaran di bahagian atas skrip kepada:
+   
+   SOLUTION_FILE_PATH: ./src/NamaProjek.sln
+   
+   
+------------------------------
+## Matriks Rumusan Struktur Persekitaran Kerja
+
+| Parameter Sistem | Nilai Konfigurasi Terupaya | Peranan & Skop Tugasan |
+|---|---|---|
+| Hos Operasi | windows-latest | Menyediakan ekosistem Windows Server untuk pembinaan .NET native. |
+| Konfigurasi Output | Release | Mengoptimumkan kod sumber kepada versi pengeluaran yang ringan. |
+| Hak Akses Tapak | contents: read | Menghadkan tindakan token GitHub sekadar membaca kod demi keselamatan. |
+| Pengurus Dependensi | nuget | Memulihkan integriti pakej perisian sebelum fasa kompilasi. |
+
+Adakah projek .NET anda ini dibina menggunakan .NET Framework lama (memerlukan Windows) atau anda dalam perancangan untuk berhijrah ke .NET Core / .NET 8 moden? Jika anda menggunakan .NET moden, saya boleh membantu anda menukar skrip ini kepada arahan dotnet build supaya ia dapat dijalankan pada pelayan Linux (ubuntu-latest) yang jauh lebih pantas dan menjimatkan kos pengebilan Actions anda.
+
+[1] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DP0xFN7wQeNRMo1BHWA7FpKoD3YSA2T-wc)
+[2] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DN9HJmbnntNzKZQ5zTuxCEwJ5F15C3W9rQ)
+Memandangkan anda meminta maklumat "Lagi", mari kita tingkatkan fail msbuild.yml standard tadi ke tahap optimum peringkat industri. Kita akan menambah ciri Caching untuk NuGet Packages (bagi memotong masa pembinaan sehingga 60%) dan Penyimpanan Output Binaan (Upload Artifacts) supaya anda boleh memuat turun fail .exe atau .dll yang terhasil terus dari GitHub Actions. [1] 
+Berikut adalah konfigurasi lanjutan berserta langkah pengukuhan keselamatan aliran kerja (workflow security).
+------------------------------
+## 1. Fail Konfigurasi Lanjutan (.github/workflows/msbuild.yml)
+
+name: MSBuild Advanced CI
+on:
+  push:
+    branches: [ "master", "main" ] # Menyokong kedua-dua nama cawangan utama
+  pull_request:
+    branches: [ "master", "main" ]
+env:
+  SOLUTION_FILE_PATH: .
+  BUILD_CONFIGURATION: Release
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # Langkah Lanjutan: Mengaktifkan Caching NuGet untuk memendekkan masa CI/CD
+    - name: Cache NuGet Packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/packages.config') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2 # Menggunakan versi terkini yang lebih stabil
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Execute MSBuild Compile
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+
+    # Langkah Lanjutan: Menyimpan hasil binaan (.exe/.dll) ke GitHub Artifacts
+    - name: Upload Compiled Binaries
+      uses: actions/upload-artifact@v4
+      with:
+        name: production-binaries
+        path: |
+          **/bin/${{env.BUILD_CONFIGURATION}}/
+          !**/node_modules/**
+
+------------------------------
+## 2. Penyepaduan Standard Keselamatan Integrasi (SLSA3 & Branch Protection)
+Untuk memastikan rantaian bekalan perisian (software supply chain) anda selamat daripada sebarang pencerobohan kod, anda digalakkan untuk mengamalkan langkah keselamatan berikut pada repositori anda: [2] 
+
+   1. Commit Ditandatangan (Signed Commits): Pastikan setiap sumbangan kod menggunakan tandatangan GPG/SSH untuk mengesahkan identiti pemilik komit yang sah. [2] 
+   2. Branch Protection Rules: Kunci cawangan utama (main/master) di [GitHub](https://github.com/). Tetapkan syarat bahawa status binaan MSBuild Advanced CI wajib bertukar hijau (Lulus) sebelum sebarang Pull Request dibenarkan untuk dicantumkan. [2] 
+   3. Kelebihan Caching: Menyimpan pakej NuGet dalam cache bukan sahaja menjimatkan masa, malah mengelakkan kegagalan aliran kerja sekiranya pelayan NuGet mengalami gangguan atau kelembapan semasa fasa restore.
+
+------------------------------
+## Kesimpulan Struktur Fasa Automasi MSBuild
+
+| Nama Langkah | Tindakan Utama | Impak Proses | Status Keselamatan |
+|---|---|---|---|
+| actions/cache@v4 | Menyimpan folder .nuget/packages berasaskan hash fail projek. [1] | Memotong masa restore pakej secara drastik. | Selamat (Diasingkan mengikut OS) |
+| nuget restore | Memulihkan integriti rujukan komponen perisian. | Memastikan semua dependensi sedia ada sebelum compiler berjalan. | Disahkan (Dependency Verification) |
+| msbuild /m | Melakukan kompilasi multi-proses selari pada Windows Server. | Menghasilkan binari pengeluaran mod Release yang optimum. | Native (.NET Native Engine) |
+| upload-artifact@v4 | Mengekstrak fail output ke storan awan GitHub Actions. [1] | Menyediakan fail .zip berisi binari yang sedia untuk diedarkan. | Disulitkan (Encrypted Artifacts) |
+
+Adakah anda mahu menukar strategi binaan ini kepada Build Matrix untuk menguji kod anda pada pelbagai sistem operasi secara serentak (seperti gabungan Windows dan Linux menerusi CMake / .NET Multi-platform)? Sila maklumkan jika anda memerlukan bantuan lanjut untuk menyusun tetapan konfigurasi fail .sln anda! [3] 
+
+[1] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DOA-QXzErQlAfNkwj_TJRVr5E-Wp0X5Dt0)
+[2] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DMNAQOzeL4eUkude_fAzVB8ikESklYMUfk)
+[3] [https://mail.google.com](https://mail.google.com/mail/?extsrc=sync&client=h&plid=ACUX6DNy3P_Wcsxv0CkAsb-nzgw8QI-XSQ6akx8)
